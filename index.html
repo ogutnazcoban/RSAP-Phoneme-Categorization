@@ -69,7 +69,7 @@
             distractors: [
                 { name: "Ç /30ms/", file: "Female_2_C.wav" }, 
                 { name: "P /30ms/", file: "Female_2_Pu.wav" },
-                { name: "T /30ms/", file: "Female_2_Tu.wav" } // YENİ EKLENDİ (T)
+                { name: "T /30ms/", file: "Female_2_Tu.wav" }
             ],
 
             clean_trials: [
@@ -123,7 +123,7 @@
             distractors: [
                 { name: "S /30ms/", file: "Female_2_S.wav" },
                 { name: "Ş /30ms/", file: "Female_2_Sh.wav" },
-                { name: "H /30ms/", file: "Female_2_H.wav" } // YENİ EKLENDİ (H)
+                { name: "H /30ms/", file: "Female_2_H.wav" }
             ],
 
             clean_trials: [
@@ -177,7 +177,7 @@
             distractors: [
                 { name: "O /30ms/", file: "Female_2_O.wav" },
                 { name: "U /30ms/", file: "Female_2_U.wav" },
-                { name: "İ /30ms/", file: "Female_2_Idot.wav" } // YENİ EKLENDİ (İ)
+                { name: "İ /30ms/", file: "Female_2_Idot.wav" }
             ],
 
             clean_trials: [
@@ -512,6 +512,29 @@
             trial_duration: 500
         };
 
+        // --- YENİ EKLENEN KISIM: FEEDBACK TRIAL (GERİ BİLDİRİM) ---
+        var feedback_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                var last_data = jsPsych.data.get().last(1).values()[0];
+                var accuracy = last_data.accuracy; 
+                
+                // hit = Target VAR ve EVET dendi (Doğru)
+                // correct_rejection = Target YOK ve HAYIR dendi (Doğru)
+                // miss = Target VAR ama HAYIR dendi (Yanlış)
+                // false_alarm = Target YOK ama EVET dendi (Yanlış)
+
+                if(accuracy === "hit" || accuracy === "correct_rejection") {
+                    return '<div style="font-size:60px; font-weight:bold; color:#4CAF50;">TRUE</div>';
+                } else {
+                    return '<div style="font-size:60px; font-weight:bold; color:#f44336;">FALSE</div>';
+                }
+            },
+            choices: "NO_KEYS",
+            trial_duration: 1000 // 1 saniye ekranda kalır
+        };
+        // -----------------------------------------------------------
+
         var clean_test = {
             timeline: [
                 fixation, 
@@ -549,7 +572,8 @@
                         else if(target && !said_yes) data.accuracy = "miss";
                         else data.accuracy = "correct_rejection";
                     }
-                }
+                },
+                feedback_trial // Geri bildirim ekranı buraya eklendi
             ],
             timeline_variables: config.clean_trials,
             randomize_order: true,
@@ -640,7 +664,8 @@
                         else if(target && !said_yes) data.accuracy = "miss";
                         else data.accuracy = "correct_rejection";
                     }
-                }
+                },
+                feedback_trial // Geri bildirim ekranı buraya eklendi
             ],
             timeline_variables: config.noisy_trials,
             randomize_order: true,
