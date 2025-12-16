@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>The Role of Timbre, Phoneme Type and Listening Context in Phoneme Categorization</title>
+    
+    <script src="https://unpkg.com/jspsych@7.3.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-audio-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-audio-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.2"></script> 
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.2"></script>
+    <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+      html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: #2b2b2b; color: #e0e0e0; font-family: 'Arial', sans-serif; overflow: hidden; }
+      #jspsych-target { width: 100%; height: 100%; overflow-y: auto; }
+      .instruction-text { font-size: 20px; line-height: 1.6; max-width: 900px; margin: auto; padding: 20px; background-color: #333; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: left; }
+      .highlight { color: #ffcc00; font-weight: bold; }
+      .fixation { font-size: 80px; color: white; font-weight: bold; }
+      .response-btn { font-size: 20px; padding: 15px 40px; margin: 20px; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.1s; }
+      .btn-yes { background-color: #4CAF50; color: white; }
+      .btn-no { background-color: #f44336; color: white; }
+      .response-btn:hover { transform: scale(1.05); }
+      .jspsych-btn { font-size: 18px; padding: 12px 24px; margin: 10px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+      #jspsych-progressbar-container { color: #4CAF50 !important; margin-bottom: 10px !important; font-weight: bold; font-size: 18px; }
+      #jspsych-progressbar-inner { background-color: #4CAF50 !important; }
+      #progress-text { font-weight: bold; margin-left: 10px; color: #4CAF50; }
+      #quit-btn-container { position: fixed; bottom: 20px; right: 20px; z-index: 2147483647; }
+      .quit-btn { background-color: #555; color: #fff; padding: 10px 15px; border: 1px solid #777; border-radius: 5px; font-size: 14px; cursor: pointer; opacity: 0.8; transition: opacity 0.3s, background-color 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+      .quit-btn:hover { opacity: 1; background-color: #d32f2f; }
+      /* CSS UPDATE: Grid yapısı 3 distraktör olacağı için düzenlendi */
+      .audio-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; justify-content: center; margin-top: 20px; max-width: 900px; margin-left: auto; margin-right: auto; }
+      .audio-item { background: #444; padding: 10px; border-radius: 8px; text-align: center; width: 100%; box-sizing: border-box; border: 1px solid #555; }
+      .audio-item p { margin: 0 0 5px 0; font-size: 15px; font-weight: bold; color: #ddd; }
+      audio { width: 100%; height: 30px; }
+    </style>
+  </head>
+  <body>
+    <noscript><div style="color:red; text-align:center; margin-top:50px;">Please enable JavaScript.</div></noscript>
+    <div id="jspsych-target"></div>
+    <div id="quit-btn-container"><button class="quit-btn" onclick="window.quitExperiment()">End Study</button></div>
+  </body>
+  <script>
+    
+    // --- SETTINGS ---
+    const TOTAL_CYCLES = 3; 
+    const REPETITIONS_PER_STIMULUS_IN_BLOCK = 1;
+
+    window.quitExperiment = function() {
+        if(confirm("Do you want to end the experiment now? Data collected so far will be saved.")) {
+            jsPsych.endExperiment("Terminated by participant.");
+        }
+    };
+
+    // --- YAPILANDIRMA (WEB UYUMLU İSİMLER) ---
+    
+    const experiment_structure = {
+        stop: {
+            id: "stop_consonant",
+            type_name: "Stop Consonant (K)",
+            target_char: "K",
+            
+            intro_long: "Female_2_Kasaba.wav",
+            intro_short_clean: "Female_2_K.wav", 
+            intro_short_noisy: "Single_Noisy_Female_2_Ka_StopConsonant.wav", 
+            
+            distractors: [
+                { name: "Ç /30ms/", file: "Female_2_C.wav" }, 
+                { name: "P /30ms/", file: "Female_2_Pu.wav" },
+                { name: "T /30ms/", file: "Female_2_Tu.wav" } // YENİ EKLENDİ (T)
+            ],
+
+            clean_trials: [
+                // LAT (p25, p50, p75)
+                { stimulus: "Seq_1_Target_Female_2_Ka_ATTACK_p25.wav", target_present: true, condition_label: "Clean_LAT_p25" },
+                { stimulus: "Seq_2_Target_Female_2_Ka_ATTACK_p50.wav", target_present: true, condition_label: "Clean_LAT_p50" },
+                { stimulus: "Seq_3_Target_Female_2_Ka_ATTACK_p75.wav", target_present: true, condition_label: "Clean_LAT_p75" },
+                { stimulus: "STOP_LAT_Absent.wav", target_present: false, condition_label: "Clean_LAT_Absent" }, 
+                
+                // SC
+                { stimulus: "Seq_1_Target_Female_2_Ka_SC_p25.wav", target_present: true, condition_label: "Clean_SC_p25" },
+                { stimulus: "Seq_2_Target_Female_2_Ka_SC_p50.wav", target_present: true, condition_label: "Clean_SC_p50" },
+                { stimulus: "Seq_3_Target_Female_2_Ka_SC_p75.wav", target_present: true, condition_label: "Clean_SC_p75" },
+                { stimulus: "STOP_SC_Absent.wav", target_present: false, condition_label: "Clean_SC_Absent" }, 
+                
+                // SF
+                { stimulus: "Seq_1_Target_Female_2_Ka_FLUX_p25.wav", target_present: true, condition_label: "Clean_SF_p25" },
+                { stimulus: "Seq_2_Target_Female_2_Ka_FLUX_p50.wav", target_present: true, condition_label: "Clean_SF_p50" },
+                { stimulus: "Seq_3_Target_Female_2_Ka_FLUX_p75.wav", target_present: true, condition_label: "Clean_SF_p75" },
+                { stimulus: "STOP_SF_Absent.wav", target_present: false, condition_label: "Clean_SF_Absent" } 
+            ],
+            noisy_trials: [
+                // LAT (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_Ka_ATTACK_p25.wav", target_present: true, condition_label: "Noisy_LAT_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_Ka_ATTACK_p50.wav", target_present: true, condition_label: "Noisy_LAT_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_Ka_ATTACK_p75.wav", target_present: true, condition_label: "Noisy_LAT_p75" },
+                { stimulus: "STOP_SNR5_LAT_Absent.wav", target_present: false, condition_label: "Noisy_LAT_Absent" }, 
+                
+                // SC (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_Ka_SC_p25.wav", target_present: true, condition_label: "Noisy_SC_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_Ka_SC_p50.wav", target_present: true, condition_label: "Noisy_SC_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_Ka_SC_p75.wav", target_present: true, condition_label: "Noisy_SC_p75" },
+                { stimulus: "STOP_SNR5_SC_Absent.wav", target_present: false, condition_label: "Noisy_SC_Absent" }, 
+                
+                // SF (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_Ka_FLUX_p25.wav", target_present: true, condition_label: "Noisy_SF_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_Ka_FLUX_p50.wav", target_present: true, condition_label: "Noisy_SF_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_Ka_FLUX_p75.wav", target_present: true, condition_label: "Noisy_SF_p75" },
+                { stimulus: "STOP_SNR5_SF_Absent.wav", target_present: false, condition_label: "Noisy_SF_Absent" } 
+            ]
+        },
+        fricative: {
+            id: "fricative",
+            type_name: "Fricative (F)",
+            target_char: "F",
+            
+            intro_long: "Female_2_Fabrika.wav",
+            intro_short_clean: "Female_2_F.wav", 
+            intro_short_noisy: "Single_Noisy_Female_2_F_Fricative.wav", 
+            
+            distractors: [
+                { name: "S /30ms/", file: "Female_2_S.wav" },
+                { name: "Ş /30ms/", file: "Female_2_Sh.wav" },
+                { name: "H /30ms/", file: "Female_2_H.wav" } // YENİ EKLENDİ (H)
+            ],
+
+            clean_trials: [
+                // LAT
+                { stimulus: "Seq_1_Target_Female_2_F_ATTACK_p25.wav", target_present: true, condition_label: "Clean_LAT_p25" },
+                { stimulus: "Seq_2_Target_Female_2_F_ATTACK_p50.wav", target_present: true, condition_label: "Clean_LAT_p50" },
+                { stimulus: "Seq_3_Target_Female_2_F_ATTACK_p75.wav", target_present: true, condition_label: "Clean_LAT_p75" },
+                { stimulus: "FRIC_LAT_Absent.wav", target_present: false, condition_label: "Clean_LAT_Absent" }, 
+                
+                // SC
+                { stimulus: "Seq_1_Target_Female_2_F_SC_p25.wav", target_present: true, condition_label: "Clean_SC_p25" },
+                { stimulus: "Seq_2_Target_Female_2_F_SC_p50.wav", target_present: true, condition_label: "Clean_SC_p50" },
+                { stimulus: "Seq_3_Target_Female_2_F_SC_p75.wav", target_present: true, condition_label: "Clean_SC_p75" },
+                { stimulus: "FRIC_SC_Absent.wav", target_present: false, condition_label: "Clean_SC_Absent" }, 
+                
+                // SF
+                { stimulus: "Seq_1_Target_Female_2_F_FLUX_p25.wav", target_present: true, condition_label: "Clean_SF_p25" },
+                { stimulus: "Seq_2_Target_Female_2_F_FLUX_p50.wav", target_present: true, condition_label: "Clean_SF_p50" },
+                { stimulus: "Seq_3_Target_Female_2_F_FLUX_p75.wav", target_present: true, condition_label: "Clean_SF_p75" },
+                { stimulus: "FRIC_SF_Absent.wav", target_present: false, condition_label: "Clean_SF_Absent" } 
+            ],
+            noisy_trials: [
+                // LAT (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_F_ATTACK_p25.wav", target_present: true, condition_label: "Noisy_LAT_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_F_ATTACK_p50.wav", target_present: true, condition_label: "Noisy_LAT_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_F_ATTACK_p75.wav", target_present: true, condition_label: "Noisy_LAT_p75" },
+                { stimulus: "FRIC_SNR5_LAT_Absent.wav", target_present: false, condition_label: "Noisy_LAT_Absent" }, 
+                
+                // SC (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_F_SC_p25.wav", target_present: true, condition_label: "Noisy_SC_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_F_SC_p50.wav", target_present: true, condition_label: "Noisy_SC_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_F_SC_p75.wav", target_present: true, condition_label: "Noisy_SC_p75" },
+                { stimulus: "FRIC_SNR5_SC_Absent.wav", target_present: false, condition_label: "Noisy_SC_Absent" }, 
+                
+                // SF (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_F_FLUX_p25.wav", target_present: true, condition_label: "Noisy_SF_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_F_FLUX_p50.wav", target_present: true, condition_label: "Noisy_SF_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_F_FLUX_p75.wav", target_present: true, condition_label: "Noisy_SF_p75" },
+                { stimulus: "FRIC_SNR5_SF_Absent.wav", target_present: false, condition_label: "Noisy_SF_Absent" } 
+            ]
+        },
+        vowel: {
+            id: "vowel",
+            type_name: "Vowel (I)",
+            target_char: "I",
+            
+            intro_long: "Female_2_Istakoz.wav",
+            intro_short_clean: "Female_2_I.wav", 
+            intro_short_noisy: "Single_Noisy_Female_2_I_Vowel.wav", 
+            
+            distractors: [
+                { name: "O /30ms/", file: "Female_2_O.wav" },
+                { name: "U /30ms/", file: "Female_2_U.wav" },
+                { name: "İ /30ms/", file: "Female_2_Idot.wav" } // YENİ EKLENDİ (İ)
+            ],
+
+            clean_trials: [
+                // LAT
+                { stimulus: "Seq_1_Target_Female_2_I_ATTACK_p25.wav", target_present: true, condition_label: "Clean_LAT_p25" },
+                { stimulus: "Seq_2_Target_Female_2_I_ATTACK_p50.wav", target_present: true, condition_label: "Clean_LAT_p50" },
+                { stimulus: "Seq_3_Target_Female_2_I_ATTACK_p75.wav", target_present: true, condition_label: "Clean_LAT_p75" },
+                { stimulus: "VOWEL_LAT_Absent.wav", target_present: false, condition_label: "Clean_LAT_Absent" },
+                
+                // SC
+                { stimulus: "Seq_1_Target_Female_2_I_SC_p25.wav", target_present: true, condition_label: "Clean_SC_p25" },
+                { stimulus: "Seq_2_Target_Female_2_I_SC_p50.wav", target_present: true, condition_label: "Clean_SC_p50" },
+                { stimulus: "Seq_3_Target_Female_2_I_SC_p75.wav", target_present: true, condition_label: "Clean_SC_p75" },
+                { stimulus: "VOWEL_SC_Absent.wav", target_present: false, condition_label: "Clean_SC_Absent" },
+                
+                // SF
+                { stimulus: "Seq_1_Target_Female_2_I_FLUX_p25.wav", target_present: true, condition_label: "Clean_SF_p25" },
+                { stimulus: "Seq_2_Target_Female_2_I_FLUX_p50.wav", target_present: true, condition_label: "Clean_SF_p50" },
+                { stimulus: "Seq_3_Target_Female_2_I_FLUX_p75.wav", target_present: true, condition_label: "Clean_SF_p75" },
+                { stimulus: "VOWEL_SF_Absent.wav", target_present: false, condition_label: "Clean_SF_Absent" }
+            ],
+            noisy_trials: [
+                // LAT (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_I_ATTACK_p25.wav", target_present: true, condition_label: "Noisy_LAT_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_I_ATTACK_p50.wav", target_present: true, condition_label: "Noisy_LAT_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_I_ATTACK_p75.wav", target_present: true, condition_label: "Noisy_LAT_p75" },
+                { stimulus: "VOWEL_SNR5_LAT_Absent.wav", target_present: false, condition_label: "Noisy_LAT_Absent" },
+                
+                // SC (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_I_SC_p25.wav", target_present: true, condition_label: "Noisy_SC_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_I_SC_p50.wav", target_present: true, condition_label: "Noisy_SC_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_I_SC_p75.wav", target_present: true, condition_label: "Noisy_SC_p75" },
+                { stimulus: "VOWEL_SNR5_SC_Absent.wav", target_present: false, condition_label: "Noisy_SC_Absent" },
+                
+                // SF (NOISY)
+                { stimulus: "SNR5_Seq_1_Target_Female_2_I_FLUX_p25.wav", target_present: true, condition_label: "Noisy_SF_p25" },
+                { stimulus: "SNR5_Seq_2_Target_Female_2_I_FLUX_p50.wav", target_present: true, condition_label: "Noisy_SF_p50" },
+                { stimulus: "SNR5_Seq_3_Target_Female_2_I_FLUX_p75.wav", target_present: true, condition_label: "Noisy_SF_p75" },
+                { stimulus: "VOWEL_SNR5_SF_Absent.wav", target_present: false, condition_label: "Noisy_SF_Absent" }
+            ]
+        }
+    };
+
+    /* -------------------------------------------------------------------------- */
+    /* 2. INIT AND PRELOAD                                                        */
+    /* -------------------------------------------------------------------------- */
+
+    const jsPsych = initJsPsych({
+      display_element: 'jspsych-target', 
+      show_progress_bar: true, 
+      auto_update_progress_bar: true,
+      message_progress_bar: 'Completion Status',
+      on_finish: function() {
+        jsPsych.data.get().localSave('csv', 'Experiment_Results_Raw.csv');
+        analyzeAndSaveSummary();
+      },
+      on_trial_finish: function() {
+        var progress = jsPsych.getProgressBarCompleted();
+        var percent = Math.round(progress * 100);
+        
+        var barContainer = document.querySelector('#jspsych-progressbar-container span');
+        if(barContainer) {
+             if(!document.getElementById('progress-text')) {
+                 var span = document.createElement('span');
+                 span.id = 'progress-text';
+                 span.innerHTML = " " + percent + "%";
+                 barContainer.appendChild(span);
+             } else {
+                 document.getElementById('progress-text').innerHTML = " " + percent + "%";
+             }
+        }
+      }
+    });
+
+    function analyzeAndSaveSummary() {
+        var lastData = jsPsych.data.get().last(1).values()[0];
+        var pName = lastData.participant_name || "Unknown";
+        var pAge = lastData.participant_age || "-";
+        var pGender = lastData.participant_gender || "-";
+
+        var trials = jsPsych.data.get().filter({task: 'response'});
+        var groupedData = {};
+        
+        trials.values().forEach(function(row) {
+            var fileFullPath = row.file_name;
+            var label = row.condition_label;
+            var fileName = fileFullPath.split('/').pop(); 
+            var uniqueKey = label + " (" + fileName + ")";
+            
+            if (!groupedData[uniqueKey]) {
+                groupedData[uniqueKey] = {
+                    correct_count: 0,
+                    total_count: 0,
+                    responses: []
+                };
+            }
+            
+            var isCorrect = (row.accuracy === "hit" || row.accuracy === "correct_rejection");
+            if(isCorrect) groupedData[uniqueKey].correct_count++;
+            groupedData[uniqueKey].total_count++;
+            
+            var humanReadable = "";
+            if(row.accuracy === "hit") humanReadable = "Hit (Correct)";
+            else if(row.accuracy === "correct_rejection") humanReadable = "Correct Rejection (Correct)";
+            else if(row.accuracy === "miss") humanReadable = "Miss (Incorrect)";
+            else if(row.accuracy === "false_alarm") humanReadable = "False Alarm (Incorrect)";
+            
+            groupedData[uniqueKey].responses.push(humanReadable);
+        });
+        
+        var csvContent = "Name,Age,Gender,File_Name,Rep_1_Resp,Rep_2_Resp,Rep_3_Resp,Total_Correct,Result_(2_3_Pass)\n";
+        
+        for (var key in groupedData) {
+            var item = groupedData[key];
+            var passed = (item.correct_count >= 2) ? "PASSED" : "FAILED";
+            var r1 = item.responses[0] || "-";
+            var r2 = item.responses[1] || "-";
+            var r3 = item.responses[2] || "-";
+            
+            csvContent += `"${pName}","${pAge}","${pGender}","${key}",${r1},${r2},${r3},${item.correct_count},${passed}\n`;
+        }
+        
+        var hiddenElement = document.createElement('a');
+        hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvContent);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = 'Experiment_Results_Summary_Analysis.csv';
+        hiddenElement.click();
+    }
+
+    var all_files = [];
+    Object.values(experiment_structure).forEach(cat => {
+        if(cat.intro_clean) all_files.push(cat.intro_clean);
+        if(cat.intro_noisy) all_files.push(cat.intro_noisy);
+        cat.clean_trials.forEach(t => all_files.push(t.stimulus));
+        cat.noisy_trials.forEach(t => all_files.push(t.stimulus));
+        
+        if(cat.distractors) {
+            cat.distractors.forEach(d => {
+                all_files.push(encodeURI(d.file));
+            });
+        }
+    });
+
+    all_files.push("Calibration_Sound_Long.wav");
+
+    var timeline = [];
+
+    timeline.push({
+      type: jsPsychPreload,
+      audio: all_files,
+      message: 'Loading audio files... Please wait.',
+      show_detailed_errors: true
+    });
+
+    var intro_page = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: `
+            <div class="instruction-text" style="text-align: center;">
+                <h2>The Role of Timbre, Phoneme Type and Listening Context in Phoneme Categorization</h2>
+                <hr>
+                <p style="text-align: justify;">
+                    This study is conducted by <strong>Prof. Dr. Adam Tierney</strong> (Birkbeck, University of London), <strong>Assoc. Prof. Dr. Mustafa Yüksel</strong> (Ankara Medipol University), and <strong>MSc. Student Öğütnaz Çoban</strong> (Ankara Medipol University).
+                </p>
+                <p style="text-align: justify;">
+                    <strong>Aim of the Study:</strong><br>
+                    The aim of this research is to investigate the effect of timbral characteristics of phonemes on auditory perception in different listening environments (quiet and noisy). You are asked to focus on short sound sequences presented through headphones and respond when you hear the designated target sounds.
+                </p>
+                <p style="text-align: justify;">
+                    Your participation is completely voluntary. The data obtained will be used solely for scientific purposes, and your identity will be kept confidential.
+                </p>
+                <p style="margin-top: 30px; font-weight: bold;">
+                    By clicking "Continue", you agree to participate in this study.
+                </p>
+                <p style="margin-top: 10px; font-size: 16px; color: #aaa;">(You can terminate the study at any time by clicking the button at the bottom right.)</p>
+            </div>
+        `,
+        choices: ['Continue']
+    };
+    timeline.push(intro_page);
+
+    var demographic_form = {
+        type: jsPsychSurveyText,
+        questions: [
+            {prompt: "Full Name:", name: 'Name', required: true},
+            {prompt: "Age:", name: 'Age', required: true},
+            {prompt: "Gender:", name: 'Gender', required: true} 
+        ],
+        button_label: 'Continue',
+        on_finish: function(data){
+            jsPsych.data.addProperties({
+                participant_name: data.response.Name,
+                participant_age: data.response.Age,
+                participant_gender: data.response.Gender
+            });
+        }
+    };
+    timeline.push(demographic_form);
+
+    var calibration_file = "Calibration_Sound_Long.wav"; 
+
+    var calibration = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: `
+            <div class="instruction-text">
+                <h3>Volume Adjustment</h3>
+                <p>
+                    Please listen to the sound below. Adjust the volume using your computer's keys.
+                    <br>The sound should be <strong>clear and comfortable</strong>, but not too loud.
+                </p>
+                
+                <div style="margin: 30px auto; text-align: center;">
+                    <audio id="calib-audio" src="${calibration_file}" controls loop style="width: 100%; max-width: 400px;"></audio>
+                </div>
+
+                <p style="font-size: 0.9em; color: #aaa;">
+                    (You can listen as long as you need. Click 'Start Experiment' when ready.)
+                </p>
+            </div>
+        `,
+        choices: ['Start Experiment'],
+        on_load: function() {
+            var audio = document.getElementById("calib-audio");
+        }
+    };
+    timeline.push(calibration);
+
+    function createBlockTimeline(config) {
+        var block_timeline = [];
+
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <h2>Category: <span class="highlight">${config.type_name}</span></h2>
+                    <p>Target sound in this section: <strong>/${config.target_char}/</strong></p>
+                    <p>Please recognize the target sound first:</p>
+                    
+                    <hr style="margin: 20px 0; border: 0.5px solid #555;">
+                    
+                    <div style="display:flex; justify-content:space-around; flex-wrap:wrap;">
+                        <div style="text-align:center; margin:10px; background:#444; padding:15px; border-radius:8px;">
+                            <p><strong>Target Sound (Short /30ms/ and Long)</strong></p>
+                            <audio src="${config.intro_short_clean}" controls></audio>
+                            <br><br>
+                            <audio src="${config.intro_long}" controls></audio>
+                        </div>
+                    </div>
+                </div>
+            `,
+            choices: ['Continue']
+        });
+
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <p>On the next page, you will listen to <strong>distractor sounds</strong>.</p>
+                    <p>These sounds are NOT the target sound.</p>
+                </div>
+            `,
+            choices: ['Listen to Distractors']
+        });
+
+        var distractor_html = '<div class="audio-list">';
+        if(config.distractors) {
+            for(let i = 0; i < config.distractors.length; i++) {
+                let d = config.distractors[i];
+                let safePath = encodeURI(d.file); 
+                distractor_html += `
+                    <div class="audio-item">
+                        <p>${d.name}</p>
+                        <audio src="${safePath}" controls></audio>
+                    </div>
+                `;
+            }
+        }
+        distractor_html += '</div>';
+
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text" style="max-width: 1000px;">
+                    <h3>Distractor Sounds</h3>
+                    <p>Please listen to these sounds. You will encounter them in the test, but they are <strong>NOT</strong> the target (/${config.target_char}/).</p>
+                    ${distractor_html}
+                </div>
+            `,
+            choices: ['Preparation for Test']
+        });
+
+        // 1. HATIRLATMA (TEMİZ TEST ÖNCESİ)
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <h3>Reminder Before Starting the Test</h3>
+                    <p>Listen to the target sound (/${config.target_char}/) again in both quiet and noisy environments.</p>
+                    
+                    <hr style="margin: 20px 0; border: 0.5px solid #555;">
+                    
+                    <div style="display:flex; justify-content:space-around; flex-wrap:wrap;">
+                        <div style="text-align:center; margin:10px; background:#444; padding:15px; border-radius:8px;">
+                            <p><strong>Quiet Environment /30ms/</strong></p>
+                            <audio src="${config.intro_short_clean}" controls></audio>
+                        </div>
+                        <div style="text-align:center; margin:10px; background:#444; padding:15px; border-radius:8px;">
+                            <p><strong>Noisy Environment /30ms/</strong></p>
+                            <audio src="${config.intro_short_noisy}" controls></audio>
+                        </div>
+                    </div>
+                </div>
+            `,
+            choices: ['Start Test']
+        });
+
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <h3>Stage 1: Quiet Environment</h3>
+                    <p>Listen to the sequences. After the sequence ends, click <strong>"Target PRESENT"</strong> or <strong>"Target ABSENT"</strong>.</p>
+                    <p>Start when you are ready.</p>
+                </div>
+            `,
+            choices: ['Start']
+        });
+
+        var fixation = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="fixation">+</div>',
+            choices: "NO_KEYS",
+            trial_duration: 500
+        };
+
+        var clean_test = {
+            timeline: [
+                fixation, 
+                {
+                    type: jsPsychAudioKeyboardResponse,
+                    stimulus: jsPsych.timelineVariable('stimulus'),
+                    choices: "NO_KEYS", 
+                    trial_ends_after_audio: true,
+                    prompt: '<div class="fixation">+</div>' 
+                },
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: `
+                        <div class="instruction-text">Was the target sound (/${config.target_char}/) present?</div>
+                    `,
+                    choices: ['Target PRESENT', 'Target ABSENT'],
+                    button_html: [
+                        '<button class="response-btn btn-yes">%choice%</button>',
+                        '<button class="response-btn btn-no">%choice%</button>'
+                    ],
+                    data: {
+                        task: 'response',
+                        phase: 'Clean',
+                        block_type: config.type_name,
+                        file_name: jsPsych.timelineVariable('stimulus'),
+                        target_present: jsPsych.timelineVariable('target_present'),
+                        condition_label: jsPsych.timelineVariable('condition_label')
+                    },
+                    on_finish: function(data){
+                        var response_index = data.response;
+                        var said_yes = (response_index === 0);
+                        var target = data.target_present;
+                        if(target && said_yes) data.accuracy = "hit";
+                        else if(!target && said_yes) data.accuracy = "false_alarm";
+                        else if(target && !said_yes) data.accuracy = "miss";
+                        else data.accuracy = "correct_rejection";
+                    }
+                }
+            ],
+            timeline_variables: config.clean_trials,
+            randomize_order: true,
+            sample: {
+                type: 'fixed-repetitions',
+                size: REPETITIONS_PER_STIMULUS_IN_BLOCK
+            }
+        };
+        block_timeline.push(clean_test);
+
+
+        /* ---------------------------------------------------------------------- */
+        /* 2. HATIRLATMA EKLENDİ (GÜRÜLTÜLÜ TEST ÖNCESİ)                          */
+        /* ---------------------------------------------------------------------- */
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <h3>Reminder Before Starting the Noisy Test</h3>
+                    <p>Listen to the target sound (/${config.target_char}/) again in both quiet and noisy environments.</p>
+                    
+                    <hr style="margin: 20px 0; border: 0.5px solid #555;">
+                    
+                    <div style="display:flex; justify-content:space-around; flex-wrap:wrap;">
+                        <div style="text-align:center; margin:10px; background:#444; padding:15px; border-radius:8px;">
+                            <p><strong>Quiet Environment /30ms/</strong></p>
+                            <audio src="${config.intro_short_clean}" controls></audio>
+                        </div>
+                        <div style="text-align:center; margin:10px; background:#444; padding:15px; border-radius:8px;">
+                            <p><strong>Noisy Environment /30ms/</strong></p>
+                            <audio src="${config.intro_short_noisy}" controls></audio>
+                        </div>
+                    </div>
+                </div>
+            `,
+            choices: ['Start Noisy Test']
+        });
+        /* ---------------------------------------------------------------------- */
+
+
+        block_timeline.push({
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div class="instruction-text">
+                    <h3>Stage 2: Noisy Environment</h3>
+                    <p>Now you will look for the same target in a noisy environment.</p>
+                    <p>Listen carefully.</p>
+                </div>
+            `,
+            choices: ['Continue']
+        });
+
+        var noisy_test = {
+            timeline: [
+                fixation, 
+                {
+                    type: jsPsychAudioKeyboardResponse,
+                    stimulus: jsPsych.timelineVariable('stimulus'),
+                    choices: "NO_KEYS",
+                    trial_ends_after_audio: true,
+                    prompt: '<div class="fixation">+</div>'
+                },
+                {
+                    type: jsPsychHtmlButtonResponse,
+                    stimulus: `
+                        <div class="instruction-text">Was the target sound (/${config.target_char}/) present?</div>
+                    `,
+                    choices: ['Target PRESENT', 'Target ABSENT'],
+                    button_html: [
+                        '<button class="response-btn btn-yes">%choice%</button>',
+                        '<button class="response-btn btn-no">%choice%</button>'
+                    ],
+                    data: {
+                        task: 'response',
+                        phase: 'Noisy',
+                        block_type: config.type_name,
+                        file_name: jsPsych.timelineVariable('stimulus'),
+                        target_present: jsPsych.timelineVariable('target_present'),
+                        condition_label: jsPsych.timelineVariable('condition_label')
+                    },
+                    on_finish: function(data){
+                        var response_index = data.response;
+                        var said_yes = (response_index === 0);
+                        var target = data.target_present;
+
+                        if(target && said_yes) data.accuracy = "hit";
+                        else if(!target && said_yes) data.accuracy = "false_alarm";
+                        else if(target && !said_yes) data.accuracy = "miss";
+                        else data.accuracy = "correct_rejection";
+                    }
+                }
+            ],
+            timeline_variables: config.noisy_trials,
+            randomize_order: true,
+            sample: {
+                type: 'fixed-repetitions',
+                size: REPETITIONS_PER_STIMULUS_IN_BLOCK
+            }
+        };
+        block_timeline.push(noisy_test);
+
+        return block_timeline;
+    }
+
+    var all_configs = [experiment_structure.stop, experiment_structure.fricative, experiment_structure.vowel];
+    var last_start_id = null; 
+    var last_end_id = null;
+
+    for(var i=0; i < TOTAL_CYCLES; i++) {
+        var current_cycle_configs = jsPsych.randomization.shuffle(all_configs);
+        
+        while(
+            (last_start_id !== null && current_cycle_configs[0].id === last_start_id) ||
+            (last_end_id !== null && current_cycle_configs[0].id === last_end_id)
+        ) {
+            current_cycle_configs = jsPsych.randomization.shuffle(all_configs);
+        }
+        
+        last_start_id = current_cycle_configs[0].id;
+
+        for(var j=0; j < current_cycle_configs.length; j++) {
+            var config = current_cycle_configs[j];
+            var block_timeline = createBlockTimeline(config);
+            timeline.push(...block_timeline);
+            
+            if (j === current_cycle_configs.length - 1) {
+                last_end_id = config.id;
+            }
+        }
+        
+        if(i < TOTAL_CYCLES - 1) {
+            timeline.push({
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: `
+                    <div class="instruction-text">
+                        <h3>Round ${i+1} Completed</h3>
+                        <p>You can take a short break.</p>
+                        <p>Press any key to continue.</p>
+                    </div>
+                `
+            });
+        }
+    }
+
+timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `
+            <div class="instruction-text" style="text-align: center; margin-top: 100px;">
+                <h2>Experiment Completed</h2>
+                <p>You have successfully completed all sections.</p>
+                <hr>
+                <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">
+                    <strong>Press any key to SAVE your data and exit.</strong>
+                </p>
+                <p style="font-size: 16px; color: #aaa;">
+                    (The data file will be downloaded automatically.)
+                </p>
+            </div>
+        `,
+        choices: "ALL_KEYS"
+    });
+
+    jsPsych.run(timeline);
+
+  </script>
+</html>
